@@ -385,7 +385,12 @@ func sanitizeCompletionArgs(args []string) []string {
 //
 // The "initializing external data provider" INFO log matches validate /
 // bundle / mirror so a `--data` invocation is auditable.
-func recipeClientFromCmd(cmd *cli.Command, cfg *config.AICRConfig) (*aicr.Client, error) {
+func recipeClientFromCmd(
+	ctx context.Context,
+	cmd *cli.Command,
+	cfg *config.AICRConfig,
+) (*aicr.Client, error) {
+
 	dataDir := cmd.String("data")
 	if dataDir == "" {
 		dataDir = cfg.Recipe().DataDir()
@@ -395,7 +400,7 @@ func recipeClientFromCmd(cmd *cli.Command, cfg *config.AICRConfig) (*aicr.Client
 		slog.Info("initializing external data provider", "directory", dataDir)
 		source = aicr.FilesystemSource(dataDir)
 	}
-	client, err := aicr.NewClient(
+	client, err := aicr.NewClientContext(ctx,
 		aicr.WithRecipeSource(source),
 		aicr.WithVersion(version),
 	)

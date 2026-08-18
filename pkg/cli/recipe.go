@@ -167,7 +167,7 @@ Override snapshot-detected criteria:
 			// (--data / spec.recipe.data, else embedded). The Client owns its
 			// own DataProvider and per-provider criteria registry, replacing
 			// the old process-global data provider.
-			client, err := recipeClientFromCmd(cmd, cfg)
+			client, err := recipeClientFromCmd(ctx, cmd, cfg)
 			if err != nil {
 				return err
 			}

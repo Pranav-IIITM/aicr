@@ -825,7 +825,7 @@ func TestRecipeClientFromCmd_EmptyPath(t *testing.T) {
 			&cli.StringFlag{Name: "data"},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			client, err := recipeClientFromCmd(cmd, nil)
+			client, err := recipeClientFromCmd(ctx, cmd, nil)
 			if err != nil {
 				return err
 			}
@@ -846,7 +846,7 @@ func TestRecipeClientFromCmd_InvalidPath(t *testing.T) {
 			&cli.StringFlag{Name: "data"},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			client, err := recipeClientFromCmd(cmd, nil)
+			client, err := recipeClientFromCmd(ctx, cmd, nil)
 			if err == nil {
 				_ = client.Close()
 			}
@@ -872,7 +872,7 @@ func TestRecipeClientFromCmd_MissingRegistry(t *testing.T) {
 			&cli.StringFlag{Name: "data"},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			client, err := recipeClientFromCmd(cmd, nil)
+			client, err := recipeClientFromCmd(ctx, cmd, nil)
 			if err == nil {
 				_ = client.Close()
 			}

@@ -259,20 +259,55 @@ are created. Other facade options
 
 ## Recipe sources
 
-AICR exposes one production recipe source today; pick it via
+AICR exposes three production recipe sources; pick one via
 `aicr.WithRecipeSource`:
 
 | Source | Constructor | Status |
 |--------|-------------|--------|
 | Embedded | `aicr.EmbeddedSource()` | Production. Uses only AICR's built-in recipe data with no external overlay. |
 | Local filesystem | `aicr.FilesystemSource(path)` | Production. Use a directory containing a `registry.yaml` (layered over the embedded recipe data). |
-| OCI registry | `aicr.OCISource(registry, tag)` | **Reserved — not yet implemented.** `NewClient` returns `ErrCodeUnavailable` when this source is selected. |
+| OCI registry | `aicr.OCISource(repository, digest)` | Production. Pulls one immutable, digest-pinned recipe catalog into a private per-Client workspace. |
 
 `EmbeddedSource` resolves against the recipe data compiled into the
 AICR binary — no filesystem path required. Use it when you want AICR's
 bundled recipe data and no local overrides. `FilesystemSource`
 layers an external directory over that same embedded data, so files in
 the directory override their embedded equivalents.
+
+### Digest-pinned OCI recipe sources
+
+`OCISource` keeps the repository and immutable selector separate. The
+repository may start with `oci://`, but must not contain a tag or digest.
+The selector must be a complete `sha256:<64-hex-character>` manifest
+digest obtained through trusted configuration; tags and implicit `latest`
+are rejected.
+
+The accepted artifact is one OCI image manifest with the AICR artifact type,
+the canonical empty config, and exactly one gzip-compressed layer. Downloads
+and extraction are bounded, content digests are checked while streaming, and
+archive traversal, links, devices, oversized content, and malformed catalogs
+fail closed before the provider is activated.
+
+Use `NewClientContext` so caller cancellation and tighter deadlines
+propagate through registry authentication, download, extraction, and catalog
+validation:
+
+```go
+client, err := aicr.NewClientContext(ctx,
+	aicr.WithRecipeSource(aicr.OCISource(repository, manifestDigest)),
+	aicr.WithOCISourceTempDir(existingWritableParent),
+)
+if err != nil {
+	return err
+}
+defer func() { retErr = errors.Join(retErr, client.Close()) }()
+```
+
+`NewClient` remains a bounded compatibility wrapper. OCI construction
+never exceeds `defaults.OCIRecipePullTimeout`, while
+`NewClientContext` also honors any shorter caller deadline.
+`Client.Close` waits for in-flight reads, evicts provider-scoped caches,
+and removes only the unique child workspace it owns.
 
 ## Client options
 
@@ -304,6 +339,9 @@ client, err := aicr.NewClient(
   It returns `nil` when none are set — `WithAllowLists` treats a `nil`
   `AllowLists` as allow-all, so the result is always safe to pass straight
   to `WithAllowLists`.
+- **`WithOCISourceTempDir(parent string)`** selects an existing writable
+  parent for an OCI-backed Client's private workspace. It is rejected for
+  embedded and filesystem sources.
 
 `AllowLists` is a facade-owned struct whose `Accelerators`, `Services`,
 `Intents`, and `OSTypes` fields are plain `[]string` slices, so callers
