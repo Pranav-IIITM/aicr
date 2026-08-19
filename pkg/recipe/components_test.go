@@ -266,6 +266,57 @@ func TestComponentRegistry_NodeSchedulingPaths(t *testing.T) {
 	}
 }
 
+func TestComponentRegistry_K8sAIBOMContract(t *testing.T) {
+	registry, err := GetComponentRegistry()
+	if err != nil {
+		t.Fatalf("failed to load component registry: %v", err)
+	}
+
+	component := registry.Get("k8s-aibom")
+	if component == nil {
+		t.Fatal("k8s-aibom not found in registry")
+	}
+
+	if component.Helm.DefaultRepository != "oci://ghcr.io/googlecloudplatform/charts" {
+		t.Errorf("repository = %q", component.Helm.DefaultRepository)
+	}
+	if component.Helm.DefaultChart != "k8s-aibom" {
+		t.Errorf("chart = %q", component.Helm.DefaultChart)
+	}
+	if component.Helm.DefaultVersion != "1.2.0" {
+		t.Errorf("version = %q", component.Helm.DefaultVersion)
+	}
+	if component.Helm.DefaultNamespace != "k8s-aibom-system" {
+		t.Errorf("namespace = %q", component.Helm.DefaultNamespace)
+	}
+	if !component.HasSelfRefCRDs {
+		t.Error("hasSelfRefCRDs must be enabled")
+	}
+	if component.HealthCheck.AssertFile != "checks/k8s-aibom/health-check.yaml" {
+		t.Errorf("health check = %q", component.HealthCheck.AssertFile)
+	}
+
+	tests := []struct {
+		name string
+		got  []string
+		want []string
+	}{
+		{name: "override keys", got: component.ValueOverrideKeys, want: []string{"k8saibom", "aibom"}},
+		{name: "system node selectors", got: component.GetSystemNodeSelectorPaths(), want: []string{"nodeSelector"}},
+		{name: "system tolerations", got: component.GetSystemTolerationPaths(), want: []string{"tolerations"}},
+		{name: "accelerated node selectors", got: component.GetAcceleratedNodeSelectorPaths(), want: nil},
+		{name: "accelerated tolerations", got: component.GetAcceleratedTolerationPaths(), want: nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !slices.Equal(tt.got, tt.want) {
+				t.Errorf("got %v, want %v", tt.got, tt.want)
+			}
+		})
+	}
+}
+
 func TestComponentRegistry_SlinkySlurmOperator_NodeSchedulingPaths(t *testing.T) {
 	registry, err := GetComponentRegistry()
 	if err != nil {

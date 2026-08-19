@@ -1068,6 +1068,18 @@ endif
 component-cleanup: ## Clean up component test resources (COMPONENT=cert-manager [DELETE_CLUSTER=true])
 	@COMPONENT=$${COMPONENT:-} DELETE_CLUSTER=$${DELETE_CLUSTER:-false} KEEP_CLUSTER=$${KEEP_CLUSTER:-false} bash tools/component-test/cleanup.sh
 
+.PHONY: k8s-aibom-test
+k8s-aibom-test: build ## Run isolated k8s-aibom generation and lifecycle qualification
+	@bash tools/k8s-aibom-test/run.sh
+
+.PHONY: k8s-aibom-stock-parity
+k8s-aibom-stock-parity: ## Compare stock recipe bytes with the branch merge-base
+	@bash tools/k8s-aibom-test/stock-parity.sh
+
+.PHONY: k8s-aibom-bundle-test
+k8s-aibom-bundle-test: build ## Qualify k8s-aibom deployers, vendoring, OCI, and mirroring
+	@bash tools/k8s-aibom-test/bundle-parity.sh
+
 # =============================================================================
 # Combined Development Targets
 # =============================================================================

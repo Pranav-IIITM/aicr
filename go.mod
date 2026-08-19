@@ -17,6 +17,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/prometheus/client_golang v1.24.1
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/sigstore/protobuf-specs v0.5.1
 	github.com/sigstore/rekor-monitor v0.0.0-20260810213851-672d3d16806a
 	github.com/sigstore/sigstore v1.10.9
